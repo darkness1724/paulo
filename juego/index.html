@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HACK — Prototipo</title>
+  <style>
+    :root {
+      --fondo: #07090c;
+      --neon: #7cffb2;
+      --texto: #e6ffe9;
+      --panel: #0d1218;
+      --borde: #14110f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.1rem;
+      letter-spacing: 0.2em;
+      color: var(--neon);
+      margin: 8px 0 12px;
+      text-transform: uppercase;
+    }
+
+    /* Viñeta de cómic */
+    .viñeta {
+      position: relative;
+      width: min(92vw, 420px);
+      aspect-ratio: 3 / 4.2;
+      background: linear-gradient(180deg, #0b1a14 0%, #05080a 70%);
+      border: 5px solid var(--borde);
+      box-shadow: 0 0 0 3px var(--neon), 0 0 30px rgba(124, 255, 178, 0.25);
+      overflow: hidden;
+    }
+    .fondo {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,255,178,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,255,178,0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      animation: desplazar 8s linear infinite;
+    }
+    .lluvia {
+      position: absolute;
+      inset: 0;
+      opacity: 0.25;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--neon);
+      white-space: pre;
+      line-height: 14px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .personaje-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 66%;
+      transform: translateX(-50%);
+      transition: opacity 0.2s;
+    }
+    .personaje { width: 100%; height: auto; display: block; overflow: visible; }
+
+    /* Animaciones */
+    .cuerpo { animation: respirar 3.2s ease-in-out infinite; transform-origin: 150px 470px; transform-box: view-box; }
+    .ojo { transform-box: fill-box; transform-origin: center; animation: parpadear 4.5s infinite; }
+    .mano { animation: teclear 0.35s ease-in-out infinite alternate; }
+    .mano-d { animation-delay: 0.17s; }
+    .brazos { transform-box: view-box; }
+
+    @keyframes respirar {
+      0%, 100% { transform: translateY(0) scaleY(1); }
+      50% { transform: translateY(-3px) scaleY(1.01); }
+    }
+    @keyframes parpadear {
+      0%, 92%, 100% { transform: scaleY(1); }
+      95% { transform: scaleY(0.1); }
+    }
+    @keyframes teclear {
+      from { transform: translateY(0); }
+      to { transform: translateY(-4px); }
+    }
+    @keyframes desplazar {
+      from { background-position: 0 0; }
+      to { background-position: 0 28px; }
+    }
+    @keyframes glitch {
+      0% { transform: translate(0); filter: none; }
+      20% { transform: translate(-4px, 1px); filter: hue-rotate(90deg); }
+      40% { transform: translate(3px, -2px); }
+      60% { transform: translate(-2px, 2px); filter: hue-rotate(-60deg); }
+      100% { transform: translate(0); filter: none; }
+    }
+    .glitch { animation: glitch 0.45s steps(4) 1; }
+
+    /* Globo de diálogo */
+    .globo {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      background: #fff;
+      color: #111;
+      border: 4px solid var(--borde);
+      border-radius: 18px;
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 0.98rem;
+      line-height: 1.3;
+      min-height: 64px;
+      box-shadow: 4px 4px 0 var(--borde);
+    }
+    .globo::after {
+      content: "";
+      position: absolute;
+      bottom: -18px;
+      left: 40px;
+      border: 10px solid transparent;
+      border-top: 12px solid var(--borde);
+    }
+    .etapa-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--neon);
+      letter-spacing: 0.1em;
+    }
+
+    /* Controles */
+    .controles {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    button {
+      background: transparent;
+      color: var(--neon);
+      border: 2px solid var(--neon);
+      padding: 8px 14px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button[aria-pressed="true"], button:hover { background: var(--neon); color: #05080a; }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .nota {
+      margin-top: 12px;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      text-align: center;
+      max-width: 420px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>HACK — Prototipo</h1>
+
+  <section class="viñeta" id="viñeta" aria-live="polite">
+    <div class="fondo"></div>
+    <div class="lluvia" id="lluvia" aria-hidden="true"></div>
+    <div class="personaje-wrap" id="personaje"></div>
+    <div class="globo" id="globo"></div>
+    <div class="etapa-badge" id="badge"></div>
+  </section>
+
+  <nav class="controles" aria-label="Etapas del personaje">
+    <button data-etapa="1" aria-pressed="true">1 Novato</button>
+    <button data-etapa="2" aria-pressed="false">2 Aprendiz</button>
+    <button data-etapa="3" aria-pressed="false">3 Iniciado</button>
+    <button data-etapa="4" aria-pressed="false">4 Operador</button>
+    <button data-etapa="5" aria-pressed="false">5 Elegido/a</button>
+  </nav>
+
+  <p class="nota">Prototipo de la Fase 0. Cada botón muestra la etapa del personaje. Los diálogos son provisionales.</p>
+
+  <script src="personaje.js"></script>
+  <script>
+    const NOMBRES = ["", "Novato", "Aprendiz", "Iniciado", "Operador", "Elegido/a"];
+    const DIALOGOS = {
+      1: "¿Esto es… una red? Solo quería ver cómo funcionaba. Ahora no sé cómo salir.",
+      2: "Ya resolví mi primer reto. Quizá no soy tan malo en esto.",
+      3: "No dudo más. Cada puerta que se abre me dice algo nuevo.",
+      4: "Ahora otros me siguen. Eso pesa más que cualquier contraseña.",
+      5: "Ya sé lo que es esta máquina. Y sé cómo detenerla."
+    };
+
+    const personajeEl = document.getElementById("personaje");
+    const globoEl = document.getElementById("globo");
+    const badgeEl = document.getElementById("badge");
+    const viñetaEl = document.getElementById("viñeta");
+    const lluviaEl = document.getElementById("lluvia");
+    const botones = document.querySelectorAll("button[data-etapa]");
+
+    // Lluvia de caracteres estilo código, decorativa.
+    const caracteres = "01ABCDEF<>/{}[]#$%&";
+    let filas = "";
+    for (let i = 0; i < 30; i++) {
+      let fila = "";
+      for (let j = 0; j < 30; j++) fila += caracteres[Math.floor(Math.random() * caracteres.length)];
+      filas += fila + "\n";
+    }
+    lluviaEl.textContent = filas;
+
+    let escribiendo = null;
+    function escribir(texto) {
+      clearInterval(escribiendo);
+      globoEl.textContent = "";
+      let i = 0;
+      escribiendo = setInterval(() => {
+        globoEl.textContent += texto[i++] || "";
+        if (i >= texto.length) clearInterval(escribiendo);
+      }, 28);
+    }
+
+    function mostrarEtapa(etapa) {
+      personajeEl.innerHTML = PersonajeHacker.crear(etapa);
+      badgeEl.textContent = `ETAPA ${etapa} · ${NOMBRES[etapa]}`;
+      escribir(DIALOGOS[etapa]);
+      viñetaEl.classList.remove("glitch");
+      void viñetaEl.offsetWidth; // reinicia la animación
+      viñetaEl.classList.add("glitch");
+      botones.forEach(b => b.setAttribute("aria-pressed", String(Number(b.dataset.etapa) === etapa)));
+    }
+
+    botones.forEach(b => b.addEventListener("click", () => mostrarEtapa(Number(b.dataset.etapa))));
+    mostrarEtapa(1);
+  </script>
+</body>
+</html>
