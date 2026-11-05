@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HACK — Prototipo</title>
+  <title>DarkHat — Prototipo</title>
   <style>
     :root {
       --fondo: #07090c;
@@ -160,6 +160,24 @@
     }
     button[aria-pressed="true"], button:hover { background: var(--neon); color: #05080a; }
     button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .registro {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+    }
+    .registro input {
+      background: #05080a;
+      color: var(--texto);
+      border: 2px solid var(--neon);
+      padding: 6px 10px;
+      font-size: 1rem;
+      border-radius: 4px;
+      width: 180px;
+    }
     .nota {
       margin-top: 12px;
       font-size: 0.8rem;
@@ -174,7 +192,13 @@
   </style>
 </head>
 <body>
-  <h1>HACK — Prototipo</h1>
+  <h1>DarkHat — Prototipo</h1>
+
+  <form id="registro" class="registro" autocomplete="off">
+    <label for="nick">Tu nombre de hacker</label>
+    <input id="nick" name="nick" maxlength="16" placeholder="Ej: Nyx" required>
+    <button type="submit">Guardar</button>
+  </form>
 
   <section class="viñeta" id="viñeta" aria-live="polite">
     <div class="fondo"></div>
@@ -198,12 +222,16 @@
   <script>
     const NOMBRES = ["", "Novato", "Aprendiz", "Iniciado", "Operador", "Elegido/a"];
     const DIALOGOS = {
-      1: "¿Esto es… una red? Solo quería ver cómo funcionaba. Ahora no sé cómo salir.",
-      2: "Ya resolví mi primer reto. Quizá no soy tan malo en esto.",
-      3: "No dudo más. Cada puerta que se abre me dice algo nuevo.",
-      4: "Ahora otros me siguen. Eso pesa más que cualquier contraseña.",
-      5: "Ya sé lo que es esta máquina. Y sé cómo detenerla."
+      1: n => `¿Esto es… una red? Solo quería ver cómo funcionaba. Soy ${n}, y ahora no sé cómo salir.`,
+      2: n => `Ya resolví mi primer reto. ${n}, quizá no soy tan malo en esto.`,
+      3: n => `No dudo más, ${n}. Cada puerta que se abre me dice algo nuevo.`,
+      4: n => `Ahora otros me siguen. Eso pesa más que cualquier contraseña.`,
+      5: n => `Ya sé lo que es esta máquina, ${n}. Y sé cómo detenerla.`
     };
+    const NICK_GUARDADO = "darkhat_nick";
+    let nombre = "Nuevo";
+    try { nombre = localStorage.getItem(NICK_GUARDADO) || nombre; } catch (e) { /* sin almacenamiento */ }
+    let etapaActual = 1;
 
     const personajeEl = document.getElementById("personaje");
     const globoEl = document.getElementById("globo");
@@ -234,9 +262,10 @@
     }
 
     function mostrarEtapa(etapa) {
+      etapaActual = etapa;
       personajeEl.innerHTML = PersonajeHacker.crear(etapa);
-      badgeEl.textContent = `ETAPA ${etapa} · ${NOMBRES[etapa]}`;
-      escribir(DIALOGOS[etapa]);
+      badgeEl.textContent = `${nombre} · ETAPA ${etapa} · ${NOMBRES[etapa]}`;
+      escribir(DIALOGOS[etapa](nombre));
       viñetaEl.classList.remove("glitch");
       void viñetaEl.offsetWidth; // reinicia la animación
       viñetaEl.classList.add("glitch");
@@ -244,6 +273,19 @@
     }
 
     botones.forEach(b => b.addEventListener("click", () => mostrarEtapa(Number(b.dataset.etapa))));
+
+    const formRegistro = document.getElementById("registro");
+    const inputNick = document.getElementById("nick");
+    inputNick.value = nombre === "Nuevo" ? "" : nombre;
+    formRegistro.addEventListener("submit", e => {
+      e.preventDefault();
+      const limpio = inputNick.value.trim();
+      if (!limpio) return;
+      nombre = limpio;
+      try { localStorage.setItem(NICK_GUARDADO, nombre); } catch (err) { /* sin almacenamiento */ }
+      mostrarEtapa(etapaActual);
+    });
+
     mostrarEtapa(1);
   </script>
 </body>

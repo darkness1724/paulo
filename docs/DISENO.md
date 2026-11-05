@@ -1,4 +1,4 @@
-# Documento de diseño — Proyecto "HACK" (nombre provisional)
+# Documento de diseño — DarkHat
 
 Juego de hackers de puzzles, estilo cómic dinámico, con un protagonista que evoluciona
 visualmente a medida que supera retos. Desarrollo 100% con herramientas libres y gratuitas.
@@ -18,7 +18,7 @@ de la historia, no solo un cambio de ropa. Cada etapa se gana con un hito narrat
 
 | Etapa | Capítulos | Aspecto | Significado |
 |---|---|---|---|
-| 1. Novato | 1–2 | Sudadera gris, mochila naranja, tenis | Entra sin saber nada |
+| 1. Novato | 1–2 | Buso negro con invasor pixelado verde, audífonos al cuello, gafas redondas, mochila, tenis rojos | Entra sin saber nada |
 | 2. Aprendiz | 3–4 | Chaqueta azul marino, audífonos | Gana su primera alianza |
 | 3. Iniciado | 5–6 | Chaqueta negra, cuello alto, gafas oscuras | Deja de dudar |
 | 4. Operador | 7–8 | Gabán largo negro | Dirige a otros |
@@ -72,8 +72,15 @@ así que cambiar de etapa es intercambiar capas.
 | Sonido | Web Audio API (efectos y música procedural) | Estándar del navegador |
 | Publicación | GitHub Pages | Gratis |
 
-## 7. Pendientes
+## 7. Nombre del jugador
 
-- Confirmar el nombre definitivo del juego.
+- Al empezar, el jugador escribe su **nombre de hacker** (máx. 16 caracteres).
+- El nombre aparece en los diálogos y en la barra de estado de la viñeta.
+- Se guarda en el navegador (`localStorage`). Si no hay almacenamiento, funciona igual sin guardar.
+
+## 8. Pendientes
+
+- Decidir si DarkHat tendrá un sombrero o gorra como accesorio (el nombre lo sugiere).
+- Ajustar la paleta final: verde neón del invasor, naranja de las correas y rojo de los tenis.
 - Ampliar el personaje a las etapas 2–5 (en curso después del prototipo).
 - Definir el texto de los capítulos 1–3.

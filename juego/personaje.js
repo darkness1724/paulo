@@ -9,8 +9,11 @@ const PersonajeHacker = (() => {
     cabello_largo: '#1f150e',
     pantalon: '#2d3748',
     zapato: '#f5f5f5',
-    sudadera: '#6b7280',
-    mochila: '#d9480f',
+    sudadera: '#1f2129',
+    mochila: '#2a2d36',
+    naranja: '#e67e22',
+    rojo: '#b83227',
+    verde: '#7cffb2',
     chaqueta: '#1f3a5f',
     cierre: '#9ca3af',
     audifonos: '#111111',
@@ -22,6 +25,27 @@ const PersonajeHacker = (() => {
   };
 
   const contorno = `stroke="${C.contorno}" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"`;
+
+  // Invasor pixelado (estilo arcade) como estampado del buso.
+  const FILAS_INVASOR = [
+    '..#.....#..',
+    '...#...#...',
+    '..#######..',
+    '.##.###.##.',
+    '###########',
+    '#.#######.#',
+    '#.#.....#.#',
+    '...##.##...',
+  ];
+  const invasor = (x0, y0, celda, color) => {
+    let out = '';
+    FILAS_INVASOR.forEach((fila, y) => {
+      [...fila].forEach((c, x) => {
+        if (c === '#') out += `<rect x="${x0 + x * celda}" y="${y0 + y * celda}" width="${celda}" height="${celda}" fill="${color}"/>`;
+      });
+    });
+    return out;
+  };
 
   // Cabello trasero (largo) para etapas 4 y 5.
   const peloTrasero = (etapa) => {
@@ -44,7 +68,7 @@ const PersonajeHacker = (() => {
       return `
         <path d="M104 172 Q150 158 196 172 L206 302 L94 302 Z" fill="${C.sudadera}" ${contorno}/>
         <path d="M128 262 L172 262 L168 292 L132 292 Z" fill="#525a68" stroke="${C.contorno}" stroke-width="3"/>
-        <path d="M120 186 L150 214 L180 186" fill="none" stroke="#c9ced6" stroke-width="4" stroke-linecap="round"/>`;
+        ${invasor(122, 206, 5, C.verde)}`;
     }
     if (etapa === 2 || etapa === 3) {
       const cuello = etapa === 3
@@ -88,6 +112,20 @@ const PersonajeHacker = (() => {
   // Accesorios de cara: audífonos (2), gafas oscuras (3–5).
   const accesorios = (etapa) => {
     let out = '';
+    if (etapa === 1) {
+      // Audífonos alrededor del cuello.
+      out += `
+        <path d="M104 178 Q150 202 196 178" fill="none" stroke="${C.audifonos}" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="100" cy="180" r="9" fill="${C.audifonos}" stroke="${C.contorno}" stroke-width="3"/>
+        <circle cx="200" cy="180" r="9" fill="${C.audifonos}" stroke="${C.contorno}" stroke-width="3"/>`;
+    }
+    if (etapa <= 2) {
+      // Gafas redondas transparentes.
+      out += `
+        <circle cx="134" cy="122" r="13" fill="none" stroke="${C.contorno}" stroke-width="3"/>
+        <circle cx="166" cy="122" r="13" fill="none" stroke="${C.contorno}" stroke-width="3"/>
+        <line x1="147" y1="122" x2="153" y2="122" stroke="${C.contorno}" stroke-width="3"/>`;
+    }
     if (etapa === 2) {
       out += `
         <path d="M96 118 Q150 26 204 118" fill="none" stroke="${C.audifonos}" stroke-width="7"/>
@@ -147,8 +185,8 @@ const PersonajeHacker = (() => {
     return `
       <rect x="118" y="300" width="28" height="120" rx="8" fill="${C.pantalon}" ${contorno}/>
       <rect x="154" y="300" width="28" height="120" rx="8" fill="${C.pantalon}" ${contorno}/>
-      <rect x="108" y="412" width="42" height="20" rx="9" fill="${C.zapato}" ${contorno}/>
-      <rect x="150" y="412" width="42" height="20" rx="9" fill="${C.zapato}" ${contorno}/>`;
+      <rect x="108" y="412" width="42" height="20" rx="9" fill="${etapa === 1 ? C.rojo : C.zapato}" ${contorno}/>
+      <rect x="150" y="412" width="42" height="20" rx="9" fill="${etapa === 1 ? C.rojo : C.zapato}" ${contorno}/>`;
   };
 
   // Ensambla el personaje completo en el orden correcto de capas.
