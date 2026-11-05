@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DarkHat — Personaje 3D</title>
+  <style>
+    :root { --neon: #7cffb2; --texto: #e6ffe9; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: radial-gradient(ellipse at 50% 30%, #3b2a5a 0%, #1a1530 45%, #07060d 100%);
+      color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    h1 { font-size: 1.1rem; letter-spacing: 0.2em; color: var(--neon); margin: 8px 0 12px; text-transform: uppercase; }
+    #escena {
+      width: min(92vw, 420px);
+      aspect-ratio: 3 / 4.2;
+      border: 3px solid #14110f;
+      box-shadow: 0 0 0 2px var(--neon), 0 0 30px rgba(124, 255, 178, 0.2);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      touch-action: none;
+      background: linear-gradient(180deg, rgba(124,255,178,0.06), rgba(0,0,0,0.25));
+    }
+    #escena canvas { display: block; width: 100%; height: 100%; }
+    #etiqueta {
+      position: absolute;
+      bottom: 8px;
+      right: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--neon);
+      pointer-events: none;
+    }
+    .controles { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    button {
+      background: transparent;
+      color: var(--neon);
+      border: 2px solid var(--neon);
+      padding: 8px 14px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button[aria-pressed="true"], button:hover { background: var(--neon); color: #05080a; }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .nota { margin-top: 12px; font-size: 0.8rem; opacity: 0.65; text-align: center; max-width: 420px; }
+  </style>
+</head>
+<body>
+  <h1>DarkHat — Personaje 3D</h1>
+
+  <section id="escena" aria-label="Personaje en 3D. Arrastra para girar.">
+    <div id="etiqueta"></div>
+  </section>
+
+  <nav class="controles" aria-label="Etapas del personaje">
+    <button data-etapa="1" aria-pressed="true">1 Novato</button>
+    <button data-etapa="2" aria-pressed="false">2 Aprendiz</button>
+    <button data-etapa="3" aria-pressed="false">3 Iniciado</button>
+    <button data-etapa="4" aria-pressed="false">4 Operador</button>
+    <button data-etapa="5" aria-pressed="false">5 Elegido/a</button>
+  </nav>
+
+  <p class="nota">Arrastra sobre el personaje para girarlo. Requiere navegador con WebGL. Abre esta página desde un servidor local (por ejemplo <code>python3 -m http.server</code> dentro de <code>juego/</code>).</p>
+
+  <script type="module">
+    import * as THREE from './vendor/three.module.js';
+    import { crearPersonaje } from './personaje3d.js';
+
+    const NOMBRES = ['', 'Novato', 'Aprendiz', 'Iniciado', 'Operador', 'Elegido/a'];
+    const contenedor = document.getElementById('escena');
+    const etiqueta = document.getElementById('etiqueta');
+    const botones = document.querySelectorAll('button[data-etapa]');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    contenedor.insertBefore(renderer.domElement, etiqueta);
+
+    const escena = new THREE.Scene();
+    const camara = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    camara.position.set(0, 2.2, 9.5);
+    camara.lookAt(0, 1.9, 0);
+
+    // Luces: relleno suave, luz principal con sombra y contraluz verde.
+    escena.add(new THREE.HemisphereLight(0xcfe8ff, 0x2a1d3d, 1.4));
+    const luzPrincipal = new THREE.DirectionalLight(0xffffff, 2.6);
+    luzPrincipal.position.set(3, 6, 5);
+    luzPrincipal.castShadow = true;
+    luzPrincipal.shadow.mapSize.set(1024, 1024);
+    luzPrincipal.shadow.bias = -0.0008;
+    luzPrincipal.shadow.normalBias = 0.03;
+    luzPrincipal.shadow.camera.left = -3; luzPrincipal.shadow.camera.right = 3;
+    luzPrincipal.shadow.camera.top = 4; luzPrincipal.shadow.camera.bottom = -1;
+    escena.add(luzPrincipal);
+    const contraluz = new THREE.DirectionalLight(0x7cffb2, 1.6);
+    contraluz.position.set(-4, 3, -4);
+    escena.add(contraluz);
+
+    // Suelo: solo recibe sombra, más un aro de neón.
+    const suelo = new THREE.Mesh(new THREE.PlaneGeometry(10, 10),
+      new THREE.ShadowMaterial({ opacity: 0.35 }));
+    suelo.rotation.x = -Math.PI / 2;
+    suelo.receiveShadow = true;
+    escena.add(suelo);
+    const aro = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.0, 64),
+      new THREE.MeshBasicMaterial({ color: 0x7cffb2, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+    aro.rotation.x = -Math.PI / 2;
+    aro.position.y = 0.01;
+    escena.add(aro);
+
+    let personaje = null;
+    let giro = 0;
+    let arrastrando = false;
+    let ultimoX = 0;
+
+    function ponerEtapa(etapa) {
+      if (personaje) escena.remove(personaje.root);
+      personaje = crearPersonaje(etapa);
+      escena.add(personaje.root);
+      etiqueta.textContent = `ETAPA ${etapa} · ${NOMBRES[etapa]}`;
+      botones.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.etapa) === etapa)));
+    }
+
+    function ajustar() {
+      const w = contenedor.clientWidth;
+      const h = contenedor.clientHeight;
+      renderer.setSize(w, h, false);
+      camara.aspect = w / h;
+      camara.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', ajustar);
+    ajustar();
+
+    contenedor.addEventListener('pointerdown', (e) => {
+      arrastrando = true;
+      ultimoX = e.clientX;
+      contenedor.style.cursor = 'grabbing';
+    });
+    window.addEventListener('pointerup', () => {
+      arrastrando = false;
+      contenedor.style.cursor = 'grab';
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!arrastrando) return;
+      giro += (e.clientX - ultimoX) * 0.01;
+      ultimoX = e.clientX;
+    });
+
+    botones.forEach((b) => b.addEventListener('click', () => ponerEtapa(Number(b.dataset.etapa))));
+
+    const reloj = new THREE.Clock();
+    function bucle() {
+      const t = reloj.getElapsedTime();
+      if (personaje) {
+        personaje.update(t);
+        personaje.root.rotation.y = giro + Math.sin(t * 0.5) * 0.12;
+      }
+      renderer.render(escena, camara);
+      requestAnimationFrame(bucle);
+    }
+
+    ponerEtapa(1);
+    bucle();
+  </script>
+</body>
+</html>
