@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DarkHat — Cómic animado</title>
+  <style>
+    :root { --neon: #7cffb2; --texto: #e6ffe9; --borde: #14110f; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: #07060d;
+      color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    h1 { font-size: 1.1rem; letter-spacing: 0.2em; color: var(--neon); margin: 8px 0 12px; text-transform: uppercase; }
+
+    .registro { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 0.9rem; }
+    .registro input {
+      background: #05080a; color: var(--texto); border: 2px solid var(--neon);
+      padding: 6px 10px; font-size: 1rem; border-radius: 4px; width: 180px;
+    }
+    button {
+      background: transparent; color: var(--neon); border: 2px solid var(--neon);
+      padding: 6px 12px; font-family: monospace; font-size: 0.9rem; cursor: pointer; border-radius: 4px;
+    }
+    button:hover { background: var(--neon); color: #05080a; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+    /* Viñeta: la ilustración y sus capas animadas */
+    .viñeta {
+      position: relative;
+      width: min(92vw, 420px);
+      aspect-ratio: 1122 / 1402;
+      border: 5px solid var(--borde);
+      box-shadow: 0 0 0 3px var(--neon), 0 0 30px rgba(124, 255, 178, 0.25);
+      overflow: hidden;
+      background: #0b0a14;
+      touch-action: none;
+    }
+    .capa { position: absolute; inset: -2%; transition: transform 0.15s ease-out; will-change: transform; }
+    .ilustracion { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Movimiento de cámara lento tipo Ken Burns */
+    .cámara { animation: acercar 14s ease-in-out infinite alternate; transform-origin: 50% 40%; }
+    @keyframes acercar {
+      from { transform: scale(1); }
+      to { transform: scale(1.03); }
+    }
+
+    /* Pantalla de la consola en la mano (aprox. 67% x, 49% y en la ilustración) */
+    .pantalla {
+      position: absolute;
+      left: 66.5%;
+      top: 48.5%;
+      width: 7%;
+      height: 4.3%;
+      background: radial-gradient(circle, rgba(124,255,178,0.95) 0%, rgba(40,160,90,0.6) 70%);
+      border-radius: 3px;
+      mix-blend-mode: screen;
+      animation: parpadeoPantalla 2.4s steps(2, end) infinite;
+      pointer-events: none;
+    }
+    @keyframes parpadeoPantalla {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 0.35; }
+    }
+
+    /* Ventanas de la ciudad que se encienden y apagan */
+    .ventana {
+      position: absolute;
+      width: 2.2%;
+      height: 1.6%;
+      background: #ffd27a;
+      box-shadow: 0 0 6px #ffd27a;
+      mix-blend-mode: screen;
+      animation: ventana var(--t) steps(1, end) infinite;
+      pointer-events: none;
+    }
+    @keyframes ventana {
+      0%, 60% { opacity: 0.9; }
+      61%, 80% { opacity: 0.1; }
+      81%, 100% { opacity: 0.9; }
+    }
+
+    /* Destello de neón en el cielo */
+    .neon {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,80,200,0.0) 40%, rgba(255,80,200,0.25) 55%, rgba(255,80,200,0.0) 70%);
+      mix-blend-mode: screen;
+      animation: barrer 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes barrer {
+      0%, 100% { transform: translateX(-30%); opacity: 0.4; }
+      50% { transform: translateX(30%); opacity: 0.9; }
+    }
+
+    /* Líneas de escaneo sobre todo */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 2px, transparent 4px);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* Globo de diálogo */
+    .globo {
+      position: absolute;
+      bottom: 34px;
+      left: 12px;
+      right: 12px;
+      background: #fff;
+      color: #111;
+      border: 4px solid var(--borde);
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      min-height: 60px;
+      box-shadow: 4px 4px 0 var(--borde);
+      z-index: 2;
+    }
+    .globo::after {
+      content: "";
+      position: absolute;
+      top: -16px;
+      left: 36px;
+      border: 9px solid transparent;
+      border-bottom: 11px solid var(--borde);
+    }
+    .etiqueta {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--neon);
+      z-index: 2;
+      text-shadow: 0 0 4px #000;
+    }
+
+    .nota { margin-top: 14px; font-size: 0.8rem; opacity: 0.65; text-align: center; max-width: 420px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <h1>DarkHat — Cómic animado</h1>
+
+  <form id="registro" class="registro" autocomplete="off">
+    <label for="nick">Tu nombre de hacker</label>
+    <input id="nick" maxlength="16" placeholder="Ej: Nyx">
+    <button type="submit">Guardar</button>
+  </form>
+
+  <section class="viñeta" id="viñeta">
+    <div class="capa" id="capa">
+      <div class="cámara">
+        <img class="ilustracion" src="assets/darkhat-ilustracion.webp" alt="DarkHat de pie frente a una pared de ladrillos, con la ciudad de fondo">
+      </div>
+    </div>
+    <div class="pantalla" aria-hidden="true"></div>
+    <div class="neon" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="globo" id="globo"></div>
+    <div class="etiqueta" id="etiqueta"></div>
+  </section>
+
+  <p class="nota">Mueve el ratón o arrastra el dedo sobre la viñeta para el efecto de profundidad. La ilustración es tuya; las luces y el movimiento son capas animadas encima.</p>
+
+  <script>
+    const NICK = "darkhat_nick";
+    let nombre = "Nuevo";
+    try { nombre = localStorage.getItem(NICK) || nombre; } catch (e) {}
+
+    const viñeta = document.getElementById("viñeta");
+    const capa = document.getElementById("capa");
+    const globo = document.getElementById("globo");
+    const etiqueta = document.getElementById("etiqueta");
+    const inputNick = document.getElementById("nick");
+    const form = document.getElementById("registro");
+
+    // Ventanas de la ciudad: posiciones aproximadas a la derecha de la ilustración.
+    const posiciones = [
+      [78, 22], [82, 22], [86, 22], [90, 22], [78, 28], [86, 28], [92, 28],
+      [76, 40], [83, 40], [89, 40], [92, 52], [88, 60], [96, 62], [82, 68],
+      [72, 78], [79, 80], [86, 82], [93, 84]
+    ];
+    posiciones.forEach(([x, y], i) => {
+      const v = document.createElement("div");
+      v.className = "ventana";
+      v.style.left = x + "%";
+      v.style.top = y + "%";
+      v.style.setProperty("--t", (2 + (i % 5) * 0.7) + "s");
+      v.style.animationDelay = (i * 0.37 % 3) + "s";
+      capa.appendChild(v);
+    });
+
+    function mostrar() {
+      etiqueta.textContent = nombre === "Nuevo" ? "" : `Hacker: ${nombre}`;
+      globo.textContent = nombre === "Nuevo"
+        ? "Hay una red aquí adentro. Escribe tu nombre de hacker para empezar."
+        : `${nombre}, esta ciudad tiene más puertas de las que parece.`;
+      inputNick.value = nombre === "Nuevo" ? "" : nombre;
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const limpio = inputNick.value.trim();
+      if (!limpio) return;
+      nombre = limpio;
+      try { localStorage.setItem(NICK, nombre); } catch (err) {}
+      mostrar();
+    });
+
+    // Profundidad: la ilustración se mueve poco y las capas de luz un poco más.
+    function mover(clientX, clientY) {
+      const r = viñeta.getBoundingClientRect();
+      const x = ((clientX - r.left) / r.width - 0.5);
+      const y = ((clientY - r.top) / r.height - 0.5);
+      capa.style.transform = `translate(${-x * 14}px, ${-y * 10}px)`;
+      document.querySelectorAll(".pantalla, .neon").forEach((el) => {
+        el.style.translate = `${x * -8}px ${y * -6}px`;
+      });
+    }
+    viñeta.addEventListener("pointermove", (e) => mover(e.clientX, e.clientY));
+    viñeta.addEventListener("pointerdown", (e) => mover(e.clientX, e.clientY));
+    viñeta.addEventListener("pointerleave", () => {
+      capa.style.transform = "";
+      document.querySelectorAll(".pantalla, .neon").forEach((el) => { el.style.translate = ""; });
+    });
+
+    mostrar();
+  </script>
+</body>
+</html>
