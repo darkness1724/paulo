@@ -1,0 +1,7 @@
+Modelo base: "Casual" (Ultimate Modular Men / Humans Master), Quaternius.
+Licencia: CC0 1.0 Universal (dominio público).
+Fuente: https://quaternius.com/packs/ultimatemodularcharacters.html
+
+El archivo darkhat.glb se generó a partir del cuerpo y la cabeza del paquete original,
+con capas de ropa (buso, chaqueta, mangas, capucha, mochila e invasor) añadidas en Blender
+por el proyecto DarkHat. Esas capas son geometría derivada del modelo base.
