@@ -15,8 +15,8 @@ const CAPAS_POR_ETAPA = {
   1: ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_'],
   2: ['Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Mochila', 'Correa'],
   3: ['Negro_Torso', 'Negro_Mangas'],
-  4: ['Gaban'],
-  5: ['Gaban'],
+  4: ['Gaban', 'Negro_Mangas'],
+  5: ['Gaban', 'Negro_Mangas'],
 };
 // Todas las prendas del modelo: las que no estén en la lista de la etapa se ocultan.
 const PRENDAS = ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_',
