@@ -15,12 +15,12 @@ const CAPAS_POR_ETAPA = {
   1: ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_'],
   2: ['Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Mochila', 'Correa'],
   3: ['Negro_Torso', 'Negro_Mangas'],
-  4: ['Gaban', 'Negro_Mangas'],
-  5: ['Gaban', 'Negro_Mangas'],
+  4: ['Traje_Suit'],
+  5: ['Chaqueta_Punk'],
 };
 // Todas las prendas del modelo: las que no estén en la lista de la etapa se ocultan.
 const PRENDAS = ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_',
-  'Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Negro_Torso', 'Negro_Mangas', 'Gaban'];
+  'Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Negro_Torso', 'Negro_Mangas', 'Traje_Suit', 'Chaqueta_Punk'];
 
 // Un solo GLB para todas las instancias: se carga una vez y se reutiliza.
 let modeloPromesa = null;
