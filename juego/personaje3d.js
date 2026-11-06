@@ -10,15 +10,17 @@ const RUTA_MODELO = './assets/darkhat.glb';
 const ESCALA = 1.75;
 
 // Qué capas se ven en cada etapa. Las piernas, pies, cabeza y cuerpo siempre se ven.
-// Los nombres que empiezan con "Invasor_" se consideran parte del buso.
+// Un nombre que termina en "_" o un prefijo como "Invasor_" coincide con todas las mallas de ese grupo.
 const CAPAS_POR_ETAPA = {
-  1: ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Capucha', 'Mochila', 'Correa', 'Invasor_'],
+  1: ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_'],
   2: ['Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Mochila', 'Correa'],
   3: ['Negro_Torso', 'Negro_Mangas'],
-  // Las etapas 4 y 5 (gabán) todavía no tienen prenda propia: usan el atuendo negro de la etapa 3.
-  4: ['Negro_Torso', 'Negro_Mangas'],
-  5: ['Negro_Torso', 'Negro_Mangas'],
+  4: ['Gaban'],
+  5: ['Gaban'],
 };
+// Todas las prendas del modelo: las que no estén en la lista de la etapa se ocultan.
+const PRENDAS = ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Mochila', 'Correa', 'Invasor_',
+  'Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Negro_Torso', 'Negro_Mangas', 'Gaban'];
 
 // Un solo GLB para todas las instancias: se carga una vez y se reutiliza.
 let modeloPromesa = null;
@@ -31,18 +33,19 @@ function cargarModelo() {
   return modeloPromesa;
 }
 
-// Muestra solo las mallas de la etapa indicada. Coincide por prefijo: "Invasor_" cubre todas las celdas.
+// Muestra solo las mallas de la etapa indicada.
+function coincide(nombre, patron) {
+  const base = nombre.replace(/\.\d+$/, ''); // Blender añade .001 a los duplicados
+  return base === patron || (patron.endsWith('_') && base.startsWith(patron));
+}
 function aplicarEtapa(escenaModelo, etapa) {
   const e = Math.min(5, Math.max(1, etapa));
   const visibles = CAPAS_POR_ETAPA[e];
-  const prendas = ['Buso_Rojo', 'Mangas_Rojas', 'Chaqueta_Negra', 'Capucha', 'Mochila', 'Correa',
-    'Invasor_', 'Chaqueta_Azul', 'Chaqueta_Azul_Mangas', 'Negro_Torso', 'Negro_Mangas'];
   escenaModelo.traverse((o) => {
     if (!o.isMesh) return;
     const nombre = o.name;
-    const esPrenda = prendas.some((p) => nombre === p || (p.endsWith('_') && nombre.startsWith(p)) || (p === 'Correa' && nombre.startsWith('Correa')));
-    if (!esPrenda) return;
-    o.visible = visibles.some((p) => nombre === p || (p.endsWith('_') && nombre.startsWith(p)) || (p === 'Correa' && nombre.startsWith('Correa')));
+    if (!PRENDAS.some((p) => coincide(nombre, p))) return;
+    o.visible = visibles.some((p) => coincide(nombre, p));
   });
 }
 
