@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DarkHat — Misión 1: Cámaras de Nexo</title>
+  <style>
+    :root { --neon: #38f0ff; --violeta: #b06bff; --texto: #d8f7ff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #03040c; color: var(--texto); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { display: flex; justify-content: center; padding: 12px; }
+    #app { width: min(96vw, 380px); display: flex; flex-direction: column; gap: 10px; }
+    #guia { border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px #17406a, 0 0 28px rgba(56, 240, 255, 0.25); }
+    #guia canvas { display: block; width: 100%; height: auto; }
+    #dialogo { background: rgba(10, 20, 40, 0.85); border: 1px solid #1d5b8c; border-radius: 12px; padding: 10px 12px; min-height: 74px; font-size: 15px; line-height: 1.35; box-shadow: inset 0 0 18px rgba(56, 240, 255, 0.08); }
+    #dialogo b { color: var(--neon); }
+    #barra { display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px; color: var(--neon); }
+    #tablero { border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px #1d5b8c, 0 0 26px rgba(176, 107, 255, 0.2); }
+    #tablero canvas { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+    .botones { display: flex; gap: 8px; justify-content: center; }
+    button { background: transparent; color: var(--neon); border: 2px solid var(--neon); padding: 8px 14px; border-radius: 8px; font-family: monospace; font-size: 14px; cursor: pointer; }
+    button:hover { background: var(--neon); color: #03040c; }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="guia"><canvas id="cara" width="600" height="380" aria-label="ARIA, guía holográfica"></canvas></div>
+    <div id="dialogo" aria-live="polite"><b>ARIA:</b> <span id="texto"></span></div>
+    <div id="barra">
+      <span>MISIÓN 1 · Cámaras de Nexo</span>
+      <span id="cruces">cruces: -</span>
+    </div>
+    <div id="tablero"><canvas id="juego" width="600" height="760" aria-label="Desenreda los cables de las cámaras"></canvas></div>
+    <div class="botones">
+      <button id="reiniciar" type="button">Reiniciar cables</button>
+      <button id="siguiente" type="button" style="display:none">Siguiente misión</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Guía holográfica ARIA ----------
+    const cara = document.getElementById('cara');
+    const cx = cara.getContext('2d');
+    const txt = document.getElementById('texto');
+    let hablando = false;
+    const t0 = performance.now();
+
+    // Cola de diálogo: escribe una línea letra por letra y mueve la boca mientras escribe.
+    const cola = [];
+    let escribiendo = false;
+    function decir(lineas) {
+      cola.push(...lineas);
+      if (!escribiendo) siguienteLinea();
+    }
+    function siguienteLinea() {
+      if (cola.length === 0) { escribiendo = false; hablando = false; return; }
+      escribiendo = true;
+      hablando = true;
+      const linea = cola.shift();
+      let i = 0;
+      txt.textContent = '';
+      const id = setInterval(() => {
+        txt.textContent += linea[i];
+        i++;
+        if (i >= linea.length) {
+          clearInterval(id);
+          setTimeout(siguienteLinea, 900);
+        }
+      }, 26);
+    }
+
+    const TRAZOS = [];
+    for (let k = 0; k < 16; k++) {
+      const pts = [];
+      let x = 40 + Math.random() * 520, y = 40 + Math.random() * 300;
+      for (let s = 0; s < 4; s++) {
+        pts.push([x, y]);
+        if (Math.random() < 0.5) x += (Math.random() < 0.5 ? -1 : 1) * (30 + Math.random() * 60);
+        else y += (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 40);
+      }
+      TRAZOS.push(pts);
+    }
+
+    function dibujarCara(t) {
+      const W = 600, H = 380;
+      cx.clearRect(0, 0, W, H);
+
+      const fondo = cx.createRadialGradient(300, 170, 20, 300, 190, 340);
+      fondo.addColorStop(0, '#0c2a4a');
+      fondo.addColorStop(1, '#03040c');
+      cx.fillStyle = fondo;
+      cx.fillRect(0, 0, W, H);
+
+      cx.strokeStyle = 'rgba(56, 240, 255, 0.07)';
+      cx.lineWidth = 1;
+      for (let x = 0; x < W; x += 24) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+      for (let y = 0; y < H; y += 24) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+
+      // Trazos de circuito sobre la cara.
+      cx.strokeStyle = 'rgba(56, 240, 255, 0.35)';
+      cx.lineWidth = 1.2;
+      TRAZOS.forEach((pts) => {
+        cx.beginPath();
+        pts.forEach(([x, y], i) => (i ? cx.lineTo(x, y) : cx.moveTo(x, y)));
+        cx.stroke();
+      });
+
+      // Cabeza.
+      cx.save();
+      cx.shadowColor = '#38f0ff';
+      cx.shadowBlur = 22;
+      const cabeza = cx.createLinearGradient(0, 30, 0, 355);
+      cabeza.addColorStop(0, 'rgba(110, 210, 255, 0.38)');
+      cabeza.addColorStop(1, 'rgba(40, 90, 200, 0.22)');
+      cx.fillStyle = cabeza;
+      cx.strokeStyle = '#38f0ff';
+      cx.lineWidth = 3;
+      cx.beginPath();
+      cx.moveTo(300, 30);
+      cx.bezierCurveTo(430, 30, 445, 170, 420, 240);
+      cx.bezierCurveTo(400, 310, 355, 350, 300, 355);
+      cx.bezierCurveTo(245, 350, 200, 310, 180, 240);
+      cx.bezierCurveTo(155, 170, 170, 30, 300, 30);
+      cx.closePath();
+      cx.fill();
+      cx.stroke();
+      cx.restore();
+
+      // Ojos con parpadeo.
+      const parpadeo = (t % 3.8) < 0.12 ? 0.12 : 1;
+      [[240, 165], [360, 165]].forEach(([x, y]) => {
+        cx.save();
+        cx.shadowColor = '#38f0ff';
+        cx.shadowBlur = 16;
+        cx.fillStyle = '#e8fdff';
+        cx.beginPath();
+        cx.ellipse(x, y, 34, 16 * parpadeo, 0, 0, Math.PI * 2);
+        cx.fill();
+        cx.fillStyle = '#14c8ff';
+        cx.beginPath();
+        cx.ellipse(x, y, 13, 13 * parpadeo, 0, 0, Math.PI * 2);
+        cx.fill();
+        cx.fillStyle = '#031020';
+        cx.beginPath();
+        cx.ellipse(x, y, 6, 6 * parpadeo, 0, 0, Math.PI * 2);
+        cx.fill();
+        cx.restore();
+      });
+
+      // Cejas y nariz.
+      cx.save();
+      cx.strokeStyle = 'rgba(56, 240, 255, 0.9)';
+      cx.lineWidth = 4;
+      cx.shadowColor = '#38f0ff';
+      cx.shadowBlur = 10;
+      cx.beginPath(); cx.moveTo(200, 130); cx.quadraticCurveTo(240, 112, 276, 126); cx.stroke();
+      cx.beginPath(); cx.moveTo(324, 126); cx.quadraticCurveTo(360, 112, 400, 130); cx.stroke();
+      cx.lineWidth = 2;
+      cx.beginPath(); cx.moveTo(300, 186); cx.lineTo(290, 214); cx.lineTo(306, 219); cx.stroke();
+      cx.restore();
+
+      // Boca: se abre y cierra mientras habla.
+      const abre = hablando ? 4 + 12 * Math.abs(Math.sin(t * 16)) * (0.6 + 0.4 * Math.sin(t * 5.3)) : 1;
+      const mx = 300, my = 270;
+      cx.save();
+      cx.shadowColor = '#b06bff';
+      cx.shadowBlur = 14;
+      cx.fillStyle = 'rgba(30, 0, 50, 0.92)';
+      cx.beginPath();
+      cx.moveTo(mx - 44, my);
+      cx.quadraticCurveTo(mx, my - 4, mx + 44, my);
+      cx.quadraticCurveTo(mx, my + abre * 2 + 8, mx - 44, my);
+      cx.fill();
+      const labio = cx.createLinearGradient(mx - 50, my - 12, mx + 50, my + 14);
+      labio.addColorStop(0, '#ff5fa2');
+      labio.addColorStop(1, '#b06bff');
+      cx.fillStyle = labio;
+      cx.beginPath();
+      cx.moveTo(mx - 50, my);
+      cx.quadraticCurveTo(mx - 24, my - 16, mx, my - 6);
+      cx.quadraticCurveTo(mx + 24, my - 16, mx + 50, my);
+      cx.quadraticCurveTo(mx, my + 5, mx - 50, my);
+      cx.fill();
+      cx.beginPath();
+      cx.moveTo(mx - 50, my);
+      cx.quadraticCurveTo(mx, my + 5, mx + 50, my);
+      cx.quadraticCurveTo(mx, my + abre * 2 + 10, mx - 50, my);
+      cx.fill();
+      cx.restore();
+
+      // Barrido de escaneo y líneas de scanline.
+      const y0 = (t * 90) % H;
+      const barrido = cx.createLinearGradient(0, y0 - 20, 0, y0 + 20);
+      barrido.addColorStop(0, 'rgba(56, 240, 255, 0)');
+      barrido.addColorStop(0.5, 'rgba(56, 240, 255, 0.25)');
+      barrido.addColorStop(1, 'rgba(56, 240, 255, 0)');
+      cx.fillStyle = barrido;
+      cx.fillRect(0, y0 - 20, W, 40);
+      cx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+      for (let y = 0; y < H; y += 4) cx.fillRect(0, y, W, 2);
+    }
+
+    // ---------- Puzzle de cables (estilo desatar nudos) ----------
+    const juego = document.getElementById('juego');
+    const jx = juego.getContext('2d');
+    const COLORES = ['#38f0ff', '#ff5fa2', '#ffd23f', '#7cff6b', '#b06bff', '#ff8a3d'];
+    const R = 22;
+    const AREA = { cx: 300, cy: 430, r: 250 };
+    const N = 12; // 6 cables, cada uno con dos cámaras
+
+    let nodos = [];
+    let solucion = [];
+    let arrastrando = -1;
+    let ganado = false;
+
+    // Solución: puntos en círculo, unidos con sus vecinos. Así las cuerdas nunca se cruzan.
+    function crearSolucion() {
+      solucion = [];
+      for (let i = 0; i < N; i++) {
+        const a = i * 2 * Math.PI / N - Math.PI / 2;
+        solucion.push({ x: AREA.cx + AREA.r * Math.cos(a), y: AREA.cy + AREA.r * Math.sin(a) });
+      }
+    }
+
+    function nuevoRevoltijo() {
+      let posiciones;
+      do {
+        posiciones = [];
+        let intentos = 0;
+        while (posiciones.length < N && intentos < 5000) {
+          intentos++;
+          const a = Math.random() * 2 * Math.PI;
+          const rr = Math.sqrt(Math.random()) * (AREA.r - 30);
+          const p = { x: AREA.cx + rr * Math.cos(a), y: AREA.cy + rr * Math.sin(a) };
+          if (posiciones.every((q) => Math.hypot(q.x - p.x, q.y - p.y) > 62)) posiciones.push(p);
+        }
+      } while (posiciones.length < N || listaCruces(posiciones).length < 3);
+      nodos = posiciones.map((p, i) => ({ x: p.x, y: p.y, color: COLORES[i >> 1] }));
+      ganado = false;
+      document.getElementById('siguiente').style.display = 'none';
+      actualizarBarra();
+    }
+
+    function cruzan(p1, p2, p3, p4) {
+      const ccw = (a, b, c) => (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+      return ccw(p1, p3, p4) !== ccw(p2, p3, p4) && ccw(p1, p2, p3) !== ccw(p1, p2, p4);
+    }
+
+    function listaCruces(lista) {
+      const pares = [];
+      for (let k = 0; k < lista.length; k += 2) pares.push([lista[k], lista[k + 1]]);
+      const salida = [];
+      for (let i = 0; i < pares.length; i++) {
+        for (let j = i + 1; j < pares.length; j++) {
+          const [a, b] = pares[i];
+          const [c, d] = pares[j];
+          if (cruzan(a, b, c, d)) salida.push({ x: (a.x + b.x + c.x + d.x) / 4, y: (a.y + b.y + c.y + d.y) / 4 });
+        }
+      }
+      return salida;
+    }
+
+    function actualizarBarra() {
+      const c = listaCruces(nodos).length;
+      document.getElementById('cruces').textContent = c === 0 ? 'cruces: 0 ✔' : `cruces: ${c}`;
+    }
+
+    function comprobar() {
+      actualizarBarra();
+      if (!ganado && listaCruces(nodos).length === 0) {
+        ganado = true;
+        decir([
+          'Canal abierto. Ya ves lo que ve Nexo.',
+          'Primer acceso conseguido. Siguiente objetivo: el servidor principal.',
+        ]);
+        document.getElementById('siguiente').style.display = 'inline-block';
+      }
+    }
+
+    function dibujarJuego() {
+      jx.clearRect(0, 0, 600, 760);
+      const fondo = jx.createLinearGradient(0, 0, 0, 760);
+      fondo.addColorStop(0, '#14072a');
+      fondo.addColorStop(1, '#050818');
+      jx.fillStyle = fondo;
+      jx.fillRect(0, 0, 600, 760);
+
+      jx.strokeStyle = 'rgba(56, 240, 255, 0.1)';
+      jx.lineWidth = 2;
+      jx.beginPath();
+      jx.arc(AREA.cx, AREA.cy, AREA.r, 0, Math.PI * 2);
+      jx.stroke();
+
+      // Cables: cada par une dos cámaras.
+      for (let k = 0; k < N; k += 2) {
+        const a = nodos[k], b = nodos[k + 1], c = COLORES[k >> 1];
+        jx.save();
+        jx.lineCap = 'round';
+        jx.shadowColor = c;
+        jx.shadowBlur = 18;
+        jx.strokeStyle = c;
+        jx.lineWidth = 7;
+        jx.beginPath(); jx.moveTo(a.x, a.y); jx.lineTo(b.x, b.y); jx.stroke();
+        jx.shadowBlur = 0;
+        jx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        jx.lineWidth = 2;
+        jx.beginPath(); jx.moveTo(a.x, a.y); jx.lineTo(b.x, b.y); jx.stroke();
+        jx.restore();
+      }
+
+      // Marcas rojas donde los cables se cruzan.
+      listaCruces(nodos).forEach((p) => {
+        jx.save();
+        jx.shadowColor = '#ff2a4a';
+        jx.shadowBlur = 16;
+        jx.fillStyle = '#ff2a4a';
+        jx.beginPath(); jx.arc(p.x, p.y, 7, 0, Math.PI * 2); jx.fill();
+        jx.restore();
+      });
+
+      // Cámaras: aro de color, lente y punto de señal.
+      nodos.forEach((n) => {
+        jx.save();
+        jx.shadowColor = n.color;
+        jx.shadowBlur = 14;
+        jx.fillStyle = '#0b1220';
+        jx.beginPath(); jx.arc(n.x, n.y, R, 0, Math.PI * 2); jx.fill();
+        jx.lineWidth = 3;
+        jx.strokeStyle = n.color;
+        jx.stroke();
+        jx.restore();
+        jx.fillStyle = n.color;
+        jx.beginPath(); jx.arc(n.x, n.y, 6, 0, Math.PI * 2); jx.fill();
+      });
+    }
+
+    function puntoEnCanvas(e) {
+      const r = juego.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * 600 / r.width, y: (e.clientY - r.top) * 760 / r.height };
+    }
+
+    juego.addEventListener('pointerdown', (e) => {
+      if (ganado) return;
+      const p = puntoEnCanvas(e);
+      let mejor = -1, mejorD = Infinity;
+      nodos.forEach((n, i) => {
+        const d = Math.hypot(n.x - p.x, n.y - p.y);
+        if (d < mejorD) { mejorD = d; mejor = i; }
+      });
+      if (mejorD < R + 14) {
+        arrastrando = mejor;
+        juego.setPointerCapture(e.pointerId);
+      }
+    });
+
+    juego.addEventListener('pointermove', (e) => {
+      if (arrastrando < 0) return;
+      const p = puntoEnCanvas(e);
+      const n = nodos[arrastrando];
+      n.x = p.x;
+      n.y = p.y;
+      // La cámara no sale del área del tablero.
+      const d = Math.hypot(n.x - AREA.cx, n.y - AREA.cy);
+      const maximo = AREA.r - R;
+      if (d > maximo) {
+        n.x = AREA.cx + (n.x - AREA.cx) * maximo / d;
+        n.y = AREA.cy + (n.y - AREA.cy) * maximo / d;
+      }
+    });
+
+    const soltar = () => {
+      if (arrastrando >= 0) {
+        arrastrando = -1;
+        comprobar();
+      }
+    };
+    juego.addEventListener('pointerup', soltar);
+    juego.addEventListener('pointercancel', soltar);
+
+    document.getElementById('reiniciar').addEventListener('click', () => nuevoRevoltijo());
+    document.getElementById('siguiente').addEventListener('click', () => {
+      decir(['La misión 2 todavía no está lista. Vamos por el servidor en la siguiente versión.']);
+    });
+
+    // Para pruebas: permite resolver el nivel y revisar el estado desde fuera.
+    window.__dh = {
+      nodos: () => nodos,
+      cruces: () => listaCruces(nodos).length,
+      resolver: () => { nodos.forEach((n, i) => { n.x = solucion[i].x; n.y = solucion[i].y; }); comprobar(); },
+      ganado: () => ganado,
+    };
+
+    // ---------- Arranque ----------
+    crearSolucion();
+    nuevoRevoltijo();
+    decir([
+      'Bienvenido, hacker. Soy ARIA, tu guía.',
+      'Nexo tiene seis cables de cámaras en su lobby. Cada cable une dos cámaras.',
+      'Si los cables se cruzan, la señal se corta. Arrastra las cámaras hasta desenredarlos.',
+    ]);
+
+    function bucle(ahora) {
+      const t = (ahora - t0) / 1000;
+      dibujarCara(t);
+      dibujarJuego();
+      requestAnimationFrame(bucle);
+    }
+    requestAnimationFrame(bucle);
+  </script>
+</body>
+</html>
